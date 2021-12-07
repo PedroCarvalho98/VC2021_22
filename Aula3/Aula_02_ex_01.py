@@ -44,7 +44,7 @@ rgb_image = np.zeros((512, 256, 3))
 cv2.namedWindow("GRAY", cv2.WINDOW_AUTOSIZE)
 cv2.namedWindow("RGB", cv2.WINDOW_AUTOSIZE)
 
-# Show images and print characteristics
+# Show images_left and print characteristics
 cv2.imshow("GRAY", gray_image)
 print("Gray level image")
 print("Number of lines : %d" % gray_image.shape[0])

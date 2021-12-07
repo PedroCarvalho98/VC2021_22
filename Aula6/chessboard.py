@@ -1,11 +1,11 @@
 # ***********************************************************************************
-# Name:           chessboard.py
+# Name:           Stereo_exe_1.py
 # Revision:
 # Date:           28-10-2019
 # Author:         Paulo Dias
 # Comments:       ChessBoard Tracking
 #
-# images         left1.jpg->left19.jpg
+# images_left         left1.jpg->left19.jpg
 # Revision:
 # Libraries:    Python 3.7.3 + openCV 4.1.0
 # ***********************************************************************************
@@ -17,7 +17,7 @@ import glob
 board_h = 9
 board_w = 6
 
-# Arrays to store object points and image points from all the images.
+# Arrays to store object points and image points from all the images_left.
 objpoints = [] # 3d point in real world space
 imgpoints = [] # 2d points in image plane.
 
@@ -46,11 +46,11 @@ def  FindAndDisplayChessboard(img):
 objp = np.zeros((board_w*board_h,3), np.float32)
 objp[:,:2] = np.mgrid[0:board_w,0:board_h].T.reshape(-1,2)
 
-# Arrays to store object points and image points from all the images.
+# Arrays to store object points and image points from all the images_left.
 objpoints = [] # 3d point in real world space
 imgpoints = [] # 2d points in image plane.
 
-# Read images
+# Read images_left
 images = glob.glob('#Lab5and6Images/left*.jpg')
 
 for fname in images:
@@ -63,9 +63,9 @@ for fname in images:
 ret, mtx, dist, rvecs, tvecs = cv2.calibrateCamera(objpoints, imgpoints, img.shape[:2], None, None)
 
 objpts = np.float32([[0,0,0], [1,0,0], [1,1,0], [0,1,0],
-                         [0,0,1], [1,0,1], [1,1,1], [0,1,1]]).reshape(-1,3)
+                         [0,0,-1], [1,0,-1], [1,1,-1], [0,1,-1]]).reshape(-1,3)
 
-i = 4
+i = 0
 imgpts, jac = cv2.projectPoints(objpts, rvecs[i], tvecs[i], mtx, dist)
 
 frame = cv2.imread(images[i])

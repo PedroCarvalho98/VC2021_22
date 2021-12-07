@@ -42,8 +42,8 @@ def histogram2image(hist_item, histSize, histImageWidth, histImageHeight, color)
 
 # Read the image from argv
 #image = cv2.imread( sys.argv[1] , cv2.IMREAD_UNCHANGED );
-image = cv2.imread( "../images/lena.jpg", cv2.IMREAD_UNCHANGED );
-image = cv2.imread( "../images/ireland-06-02.tif", cv2.IMREAD_UNCHANGED );
+image = cv2.imread( "../images_left/lena.jpg", cv2.IMREAD_UNCHANGED );
+image = cv2.imread( "../images_left/ireland-06-02.tif", cv2.IMREAD_UNCHANGED );
 
 if  np.shape(image) == ():
 	# Failed Reading
