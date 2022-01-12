@@ -7,10 +7,11 @@
 
 #---------------------------------------#
 
-
 import argparse
 import cv2
 import numpy as np
+from numpy.lib.function_base import copy
+import os
 
 class maskmaker():
 
@@ -24,7 +25,6 @@ class maskmaker():
     def getlist(self):
         return self.listcolors
     def maskvalues(self):
-        print(self.listcolors)
         Bmax = 0
         Bmin = 255
         Gmax = 0
@@ -53,10 +53,8 @@ def mouse_handler(event, x, y,flags, params):
     if event== cv2.EVENT_LBUTTONDOWN:
         image=params.getimage()
         B,G,R=image[y][x]
-        print(B,G,R)
         params.addtolist(B,G,R)
         Bmax,Gmax,Rmax,Bmin,Gmin,Rmin = params.maskvalues()
-        print(Bmax,Gmax,Rmax,Bmin,Gmin,Rmin)
         minval=np.array([Bmin,Gmin,Rmin])
         maxval=np.array([Bmax,Gmax,Rmax])
         mask=cv2.inRange(image, minval, maxval)
@@ -67,42 +65,82 @@ def main():
 
     ## --- Retirar Background --- ##
     image = cv2.imread("./Imagens/Puzzle_X_ordenado_v2.jpeg", cv2.IMREAD_COLOR)
-    window_name = 'Peças separadas'
+    image_aux = image.copy()
+    window_name = "Peças separadas"
     image = cv2.resize(image, (800, 800))   # Temos demasiada resolução da câmara
-    # mask = cv2.inRange(image, (0,80,0), (210,170,90))
-    # res = cv2.bitwise_and(image, image, mask=~mask)
+    image_aux = cv2.resize(image_aux, (800, 800))
     masker=maskmaker(image)
     cv2.namedWindow(window_name)
     cv2.imshow(window_name, image)
-    # cv2.imshow("mask", mask)
     cv2.imshow("Mouse",image)
     cv2.setMouseCallback("Mouse", mouse_handler,masker)
     cv2.waitKey(-1)
+    
+    ## --- Aplicação da máscara --- #
+    
     Bmax,Gmax,Rmax,Bmin,Gmin,Rmin=masker.maskvalues()
     minval=np.array([Bmin,Gmin,Rmin])
     maxval=np.array([Bmax,Gmax,Rmax])
     mask = cv2.inRange(image, minval, maxval)
     kernel = np.ones((5,5), np.uint8)
-    # Using cv2.erode() method
-    eroded_mask=cv2.morphologyEx(mask,cv2.MORPH_OPEN, kernel)
-    # eroded_mask=cv2.morphologyEx(eroded_mask,cv2.MORPH_CLOSE, kernel)
+    
+    ## -- Afinação da máscara --- #
 
+    eroded_mask=cv2.morphologyEx(mask,cv2.MORPH_OPEN, kernel)
     eroded_mask = cv2.morphologyEx(eroded_mask, cv2.MORPH_DILATE, kernel)
     kernel = np.ones((11, 11), np.uint8)
     eroded_mask = cv2.morphologyEx(eroded_mask, cv2.MORPH_OPEN, kernel)
-    # cv2.imshow("sem fundo", res)
     
     ## --- Segmentação e alinhamento das peças --- ##
     # Convert to graycsale
     img_gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-    # Blur the image for better edge detection
     
     edges = cv2.Canny(img_gray,100,130)
     contours, hierarchy = cv2.findContours(~eroded_mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
     cv2.imshow("img_gray", img_gray)
     cv2.imshow("edges", edges)
-    cv2.drawContours(image, contours, -1, (0,255,0), 3)
-    cv2.imshow('Contours', image)
+    contornos = []
+
+    # Imagem com aplicação da máscara
+    res = cv2.bitwise_and(image, image, mask=eroded_mask)
+    background=cv2.bitwise_and(image, image, mask=~eroded_mask)
+    res=cv2.bitwise_not(res)
+    result=cv2.multiply(background,res)
+    cv2.imshow("Com mascara", result)
+
+    # Discartar áreas irrelevantes
+    for i in contours:
+        if cv2.contourArea(i) > 4000:
+            contornos.append(i)
+
+    for i in range(len(contornos)):
+        cv2.drawContours(image_aux, contornos, i, (0,0,0), 2)
+        cv2.waitKey(200)
+        cv2.imshow("Contours", image_aux)
+    
+    # Isolar cada peça
+    list_of_figures_cropped_black_white = []
+    list_of_figures_cropped_color = []
+    for i in range(len(contornos)):
+        x, y = [], []
+        for contour_line in contornos[i]:
+            for contour in contour_line:
+                x.append(contour[0])
+                y.append(contour[1])
+
+        x1, x2, y1, y2 = min(x), max(x), min(y), max(y)
+
+        cropped_bw = result[y1:y2, x1:x2]
+        cropped_color = background[y1:y2, x1:x2]
+        list_of_figures_cropped_black_white.append(cropped_bw)
+        list_of_figures_cropped_color.append(cropped_color)
+        cv2.imshow("Cropped bw", cropped_bw)
+        cv2.imshow("Cropped color", cropped_color)
+        cv2.waitKey(200)
+        pathBW = "./BW"
+        pathColored = "./Colored"
+        cv2.imwrite(os.path.join(pathBW , "BW"+str(i)+".jpg"), cropped_bw)
+        cv2.imwrite(os.path.join(pathColored , "Colored"+str(i)+".jpg"), cropped_color)
 
 
     cv2.waitKey()
