@@ -82,13 +82,13 @@ def main():
     minval=np.array([Bmin,Gmin,Rmin])
     maxval=np.array([Bmax,Gmax,Rmax])
     mask = cv2.inRange(image, minval, maxval)
-    kernel = np.ones((5,5), np.uint8)
+    kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(5,5))
     
     ## -- Afinação da máscara --- #
 
     eroded_mask=cv2.morphologyEx(mask,cv2.MORPH_OPEN, kernel)
     eroded_mask = cv2.morphologyEx(eroded_mask, cv2.MORPH_DILATE, kernel)
-    kernel = np.ones((11, 11), np.uint8)
+    kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(11,11))
     eroded_mask = cv2.morphologyEx(eroded_mask, cv2.MORPH_OPEN, kernel)
     
     ## --- Segmentação e alinhamento das peças --- ##
