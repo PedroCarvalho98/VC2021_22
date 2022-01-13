@@ -87,9 +87,9 @@ def main():
     ## -- Afinação da máscara --- #
 
     eroded_mask=cv2.morphologyEx(mask,cv2.MORPH_OPEN, kernel)
-    eroded_mask = cv2.morphologyEx(eroded_mask, cv2.MORPH_DILATE, kernel)
-    kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(11,11))
-    eroded_mask = cv2.morphologyEx(eroded_mask, cv2.MORPH_OPEN, kernel)
+    # eroded_mask = cv2.morphologyEx(eroded_mask, cv2.MORPH_DILATE, kernel)
+    # kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(11,11))
+    # eroded_mask = cv2.morphologyEx(eroded_mask, cv2.MORPH_OPEN, kernel)
     
     ## --- Segmentação e alinhamento das peças --- ##
     # Convert to graycsale
@@ -115,7 +115,7 @@ def main():
 
     for i in range(len(contornos)):
         cv2.drawContours(image_aux, contornos, i, (0,0,0), 2)
-        cv2.waitKey(200)
+        # cv2.waitKey(200)
         cv2.imshow("Contours", image_aux)
     
     # Isolar cada peça
@@ -128,7 +128,7 @@ def main():
                 x.append(contour[0])
                 y.append(contour[1])
 
-        x1, x2, y1, y2 = min(x), max(x), min(y), max(y)
+        x1, x2, y1, y2 = min(x)-5, max(x)+5, min(y)-5, max(y)+5
 
         cropped_bw = result[y1:y2, x1:x2]
         cropped_color = background[y1:y2, x1:x2]
@@ -136,11 +136,19 @@ def main():
         list_of_figures_cropped_color.append(cropped_color)
         cv2.imshow("Cropped bw", cropped_bw)
         cv2.imshow("Cropped color", cropped_color)
-        cv2.waitKey(200)
+        # cv2.waitKey(200)
         pathBW = "./BW"
         pathColored = "./Colored"
         cv2.imwrite(os.path.join(pathBW , "BW"+str(i)+".jpg"), cropped_bw)
         cv2.imwrite(os.path.join(pathColored , "Colored"+str(i)+".jpg"), cropped_color)
+    
+    image_piece_gray=cv2.imread("./BW/BW0.jpg",cv2.IMREAD_GRAYSCALE)
+    image_piece=cv2.imread("./BW/BW0.jpg")
+    dst=cv2.cornerHarris(image_piece_gray,4,5,0.13)
+    dst = cv2.dilate(dst,None)
+    image_piece[dst>0.01*dst.max()]=[0,0,255]
+    cv2.imshow("BW0",image_piece)
+    cv2.waitKey(-1)
 
 
     cv2.waitKey()
