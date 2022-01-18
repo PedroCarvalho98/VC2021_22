@@ -146,7 +146,19 @@ def main():
     image_piece=cv2.imread("./BW/BW0.jpg")
     dst=cv2.cornerHarris(image_piece_gray,4,5,0.13)
     dst = cv2.dilate(dst,None)
-    image_piece[dst>0.01*dst.max()]=[0,0,255]
+    image_piece[dst>0.020*dst.max()]=[0,0,255]
+    list_of_all_corners_detected = [dst>0.020*dst.max()]
+    position_of_all_corners=[]
+    for y in range(len(list_of_all_corners_detected[0])):
+        for x in range(len(list_of_all_corners_detected[0][0])):
+            if list_of_all_corners_detected[0][y][x] == True:
+                position_of_all_corners.append((y,x))
+ 
+    # image_piece[position_of_all_corners] == [0,255,0]
+    print(image_piece.shape)
+    # print(list_of_all_corners_detected)
+    
+    print(position_of_all_corners)
     cv2.imshow("BW0",image_piece)
     cv2.waitKey(-1)
 
