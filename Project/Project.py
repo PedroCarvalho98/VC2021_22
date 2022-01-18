@@ -65,10 +65,11 @@ def main():
 
     ## --- Retirar Background --- ##
     image = cv2.imread("./Imagens/Puzzle_X_ordenado_v2.jpeg", cv2.IMREAD_COLOR)
-    image_aux = image.copy()
+    
     window_name = "Peças separadas"
-    image = cv2.resize(image, (800, 800))   # Temos demasiada resolução da câmara
-    image_aux = cv2.resize(image_aux, (800, 800))
+    image = cv2.resize(image, (600, 600))   # Temos demasiada resolução da câmara
+    image_aux = image.copy()
+    # image_aux = cv2.resize(image_aux, (800, 800))
     masker=maskmaker(image)
     cv2.namedWindow(window_name)
     cv2.imshow(window_name, image)
@@ -142,28 +143,38 @@ def main():
         cv2.imwrite(os.path.join(pathBW , "BW"+str(i)+".jpg"), cropped_bw)
         cv2.imwrite(os.path.join(pathColored , "Colored"+str(i)+".jpg"), cropped_color)
     
-    image_piece_gray=cv2.imread("./BW/BW0.jpg",cv2.IMREAD_GRAYSCALE)
-    image_piece=cv2.imread("./BW/BW0.jpg")
-    dst=cv2.cornerHarris(image_piece_gray,4,5,0.13)
-    dst = cv2.dilate(dst,None)
-    image_piece[dst>0.020*dst.max()]=[0,0,255]
-    list_of_all_corners_detected = [dst>0.020*dst.max()]
-    position_of_all_corners=[]
-    for y in range(len(list_of_all_corners_detected[0])):
-        for x in range(len(list_of_all_corners_detected[0][0])):
-            if list_of_all_corners_detected[0][y][x] == True:
-                position_of_all_corners.append((y,x))
+    image_piece=cv2.imread("./Colored/Colored0.jpg")
+    image_piece_gray= cv2.cvtColor(image_piece,cv2.COLOR_BGR2GRAY)
+    # --- Corner Harris --- #
+    # dst=cv2.cornerHarris(image_piece_gray,4,5,0.13)
+    # dst = cv2.dilate(dst,None)
+    # image_piece[dst>0.020*dst.max()]=[0,0,255]
+    # list_of_all_corners_detected = [dst>0.020*dst.max()]
+    # position_of_all_corners=[]
+    # for y in range(len(list_of_all_corners_detected[0])):
+    #     for x in range(len(list_of_all_corners_detected[0][0])):
+    #         if list_of_all_corners_detected[0][y][x] == True:
+    #             position_of_all_corners.append((y,x))
  
     # image_piece[position_of_all_corners] == [0,255,0]
-    print(image_piece.shape)
+    # print(image_piece.shape)
     # print(list_of_all_corners_detected)
     
-    print(position_of_all_corners)
-    cv2.imshow("BW0",image_piece)
+    # print(position_of_all_corners)
+
+    # --- SIFT --- #
+    imagebase=cv2.imread("./Imagens/Puzzle_X_completo_v2.jpeg",cv2.IMREAD_GRAYSCALE)
+
+    sift = cv2.SIFT_create()
+    kp = sift.detect(image_piece_gray,None)
+    img=cv2.drawKeypoints(image_piece_gray,kp,image)
+
+
+    keypoints_1, descriptors_1 = sift.detectAndCompute(imagebase,None)
+    print(keypoints_1,descriptors_1)
+    cv2.imshow("SIFT",img)
     cv2.waitKey(-1)
 
-
-    cv2.waitKey()
     cv2.destroyAllWindows
 if __name__ == "__main__":
     main()
