@@ -8,11 +8,15 @@
 #---------------------------------------#
 
 import argparse
+from turtle import width
 import cv2
-from matplotlib import pyplot as plt
+from cv2 import imshow
+from cv2 import mean
+from matplotlib import pyplot as plt, widgets
 import numpy as np
 from numpy.lib.function_base import copy
 import os
+import math
 
 class maskmaker():
 
@@ -65,10 +69,10 @@ def mouse_handler(event, x, y,flags, params):
 def main():
 
     ## --- Retirar Background --- ##
-    image = cv2.imread("./Imagens/Puzzle_X_ordenado_v2.jpeg", cv2.IMREAD_COLOR)
+    image = cv2.imread("./Imagens/Puzzle_X_ordenado_v4.jpeg", cv2.IMREAD_COLOR)
     
     window_name = "Peças separadas"
-    image = cv2.resize(image, (800, 800))   # Temos demasiada resolução da câmara
+    # image = cv2.resize(image, (800, 800))   # Temos demasiada resolução da câmara
     image_aux = image.copy()
     # image_aux = cv2.resize(image_aux, (800, 800))
     masker=maskmaker(image)
@@ -86,10 +90,10 @@ def main():
     mask = cv2.inRange(image, minval, maxval)
     kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(5,5))
     
-    ## -- Afinação da máscara --- #
+    ## --- Afinação da máscara --- #
 
     eroded_mask=cv2.morphologyEx(mask,cv2.MORPH_OPEN, kernel)
-    # eroded_mask = cv2.morphologyEx(eroded_mask, cv2.MORPH_DILATE, kernel)
+    eroded_mask = cv2.morphologyEx(eroded_mask, cv2.MORPH_DILATE, kernel)
     # kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(11,11))
     # eroded_mask = cv2.morphologyEx(eroded_mask, cv2.MORPH_OPEN, kernel)
     
@@ -112,7 +116,8 @@ def main():
 
     # Discartar áreas irrelevantes
     for i in contours:
-        if cv2.contourArea(i) > 4000:
+        #print(cv2.contourArea(i))
+        if cv2.contourArea(i) > 4000 and cv2.contourArea(i) <25000:
             contornos.append(i)
 
     for i in range(len(contornos)):
@@ -130,7 +135,7 @@ def main():
                 x.append(contour[0])
                 y.append(contour[1])
 
-        x1, x2, y1, y2 = min(x)-5, max(x)+5, min(y)-5, max(y)+5
+        x1, x2, y1, y2 = min(x), max(x), min(y), max(y)
 
         cropped_bw = result[y1:y2, x1:x2]
         cropped_color = background[y1:y2, x1:x2]
@@ -138,112 +143,123 @@ def main():
         list_of_figures_cropped_color.append(cropped_color)
         cv2.imshow("Cropped bw", cropped_bw)
         cv2.imshow("Cropped color", cropped_color)
-        # cv2.waitKey(200)
+        #cv2.waitKey(200)
         pathBW = "./BW"
         pathColored = "./Colored"
         cv2.imwrite(os.path.join(pathBW , "BW"+str(i)+".jpg"), cropped_bw)
         cv2.imwrite(os.path.join(pathColored , "Colored"+str(i)+".jpg"), cropped_color)
     
-    # image_piece=cv2.imread("./Colored/Colored0.jpg")
-    # image_piece_gray= cv2.cvtColor(image_piece,cv2.COLOR_BGR2GRAY)
 
-    # --- Corner Harris --- #
-    # dst=cv2.cornerHarris(image_piece_gray,4,5,0.13)
-    # dst = cv2.dilate(dst,None)
-    # image_piece[dst>0.020*dst.max()]=[0,0,255]
-    # list_of_all_corners_detected = [dst>0.020*dst.max()]
-    # position_of_all_corners=[]
-    # for y in range(len(list_of_all_corners_detected[0])):
-    #     for x in range(len(list_of_all_corners_detected[0][0])):
-    #         if list_of_all_corners_detected[0][y][x] == True:
-    #             position_of_all_corners.append((y,x))
- 
-    # image_piece[position_of_all_corners] == [0,255,0]
-    # print(image_piece.shape)
-    # print(list_of_all_corners_detected)
-    
-    # print(position_of_all_corners)
-
-    # --- SIFT --- #
-    # imagebase=cv2.imread("./Imagens/Puzzle_X_completo_v2.jpeg",cv2.IMREAD_GRAYSCALE)
-
-    # sift = cv2.SIFT_create()
-    # kp = sift.detect(image_piece_gray,None)
-    # img=cv2.drawKeypoints(image_piece_gray,kp,image)
-
-
-    # keypoints_1, descriptors_1 = sift.detectAndCompute(imagebase,None)
-    # print(keypoints_1,descriptors_1)
-    # cv2.imshow("SIFT",img)
-
+    # # --- SIFT --- #
     # read images
-    img5 = cv2.imread('./Imagens/Puzzle_X_completo_v2.jpeg')  
-    img6 = cv2.imread('./Colored/Colored9.jpg') 
+    boas_pecas = []
+    img7 = cv2.imread('./Imagens/Puzzle_X_completo_v3.jpeg') 
+    for k in range(0, 19):
+        img5=img7.copy()
+        img6 = cv2.imread('./Colored/Colored'+str(k)+'.jpg') 
 
-    img1 = cv2.cvtColor(img5, cv2.COLOR_BGR2GRAY)
-    img2 = cv2.cvtColor(img6, cv2.COLOR_BGR2GRAY)
+        cv2.imshow('img5', img7)
+        cv2.imshow('img6', img6)
 
-    #sift
-    sift = cv2.xfeatures2d.SIFT_create()
+        img1 = cv2.cvtColor(img7, cv2.COLOR_BGR2GRAY)
+        img2 = cv2.cvtColor(img6, cv2.COLOR_BGR2GRAY)
+        
+        sift = cv2.xfeatures2d.SIFT_create()
 
-    kp1, des1 = sift.detectAndCompute(img1,None)
-    kp2, des2 = sift.detectAndCompute(img2,None)
+        kp1, des1 = sift.detectAndCompute(img1,None)
+        kp2, des2 = sift.detectAndCompute(img2,None)
 
-    FLANN_INDEX_KDTREE = 0
-    index_params = dict(algorithm = FLANN_INDEX_KDTREE, trees = 5)
-    search_params = dict(checks = 50)
+        FLANN_INDEX_KDTREE = 0
+        index_params = dict(algorithm = FLANN_INDEX_KDTREE, trees = 5)
+        search_params = dict(checks = 50)
 
-    flann = cv2.FlannBasedMatcher(index_params, search_params)
+        flann = cv2.FlannBasedMatcher(index_params, search_params)
 
-    matches = flann.knnMatch(des1,des2,k=2)
+        matches = flann.knnMatch(des1,des2,k=2)
 
-    # store all the good matches as per Lowe's ratio test.
-    good = []
-    for m,n in matches:
-    #     good.append(m)
-        if m.distance < 0.7*n.distance:
-            good.append(m)
-
-
-    MIN_MATCH_COUNT = 10
-
-    if len(good)>MIN_MATCH_COUNT:
-        src_pts = np.float32([ kp1[m.queryIdx].pt for m in good ]).reshape(-1,1,2)
-        dst_pts = np.float32([ kp2[m.trainIdx].pt for m in good ]).reshape(-1,1,2)
-
-        M, mask = cv2.findHomography(src_pts, dst_pts, cv2.RANSAC,5.0)
-        matchesMask = mask.ravel().tolist()
-
-        d,h= img1.shape[::-1]
-        w=1
-        pts = np.float32([ [0,0],[0,h-1],[w-1,h-1],[w-1,0] ]).reshape(-1,1,2)
-        dst = cv2.perspectiveTransform(pts,M)
-
-        img2 = cv2.polylines(img2,[np.int32(dst)],True,255,3, cv2.LINE_AA)
-
-    else:
-        print ("Not enough matches are found" )
-        matchesMask = None
-
-    draw_params = dict(matchColor = (0,255,0), # draw matches in green color
-                    singlePointColor = None,
-                    matchesMask = matchesMask, # draw only inliers
-                    flags = None)
-
-    img3 = cv2.drawMatches(img1,kp1,img2,kp2,good,None,**draw_params)
+        # store all the good matches as per Lowe's ratio test.
+        good = []
+        for m,n in matches:
+        #     good.append(m)
+            if m.distance < 0.7*n.distance:
+                good.append(m)
 
 
+        MIN_MATCH_COUNT = 10 
+        if len(good)>MIN_MATCH_COUNT:
+            src_pts = np.float32([ kp1[m.queryIdx].pt for m in good ]).reshape(-1,1,2)
+            dst_pts = np.float32([ kp2[m.trainIdx].pt for m in good ]).reshape(-1,1,2)
 
-    # #feature matching
-    # bf = cv2.BFMatcher(cv2.NORM_L1, crossCheck=True)
+            M, mask = cv2.findHomography(src_pts, dst_pts, cv2.RANSAC,5.0)
+            matchesMask = mask.ravel().tolist()
 
-    # matches = bf.match(descriptors_1,descriptors_2)
-    # matches = sorted(matches, key = lambda x:x.distance)
+            d,h= img1.shape[::-1]
+            w=1
+            pts = np.float32([ [0,0],[0,h-1],[w-1,h-1],[w-1,0] ]).reshape(-1,1,2)
+            dst = cv2.perspectiveTransform(pts,M)
 
-    # img3 = cv2.drawMatches(img1, keypoints_1, img2, keypoints_2, matches[:20], img2, flags=2)
-    # print(len(matches))
-    plt.imshow(img3), plt.show()
+            img2 = cv2.polylines(img2,[np.int32(dst)],True,255,3, cv2.LINE_AA)
 
+        else:
+            print ("Not enough matches are found" )
+            matchesMask = None
+        draw_params = dict(matchColor = (0,255,0), # draw matches in green color
+                        singlePointColor = None,
+                        matchesMask = matchesMask, # draw only inliers
+                        flags = None)
+
+        img3 = cv2.drawMatches(img1,kp1,img2,kp2,good,None,**draw_params)
+
+        
+        # plt.imshow(img3), plt.show()
+
+
+        # # --- Matching --- #
+        height,width,_=img5.shape
+        #print(height)
+        #print(width)
+        w, h = 4, 5
+        Grid = [[0 for x in range(w)] for y in range(h)] 
+        for j in range(h):
+            for i in range(w):
+                Grid[j][i] = (int(width/8 + i*width/4),int(height/10 + j*height/5))
+        
+        point_list=[(int(point[0][0]),int(point[0][1])) for point in src_pts]
+        good_points=[a*b for a,b in zip(point_list,matchesMask) if a*b!=0]
+        good_points=[point for point in good_points if point!=()]
+        #print(good_points)
+        x_list=[x[0] for x in good_points]
+        y_list=[y[1] for y in good_points]
+        
+        dst_pts_mean = (int(sum(x_list)/len(x_list)),int(sum(y_list)/len(y_list)))
+        #print(dst_pts_mean)
+        cv2.circle(img5, dst_pts_mean, 5, (0, 255, 0),-1)
+        minpoint=(int(min(x_list)),int(min(y_list)))
+        maxpoint=(int(max(x_list)),int(max(y_list)))
+        for point in good_points:
+            cv2.circle(img5, point, 5, (255, 0, 0),-1)
+        mindist=None
+        for j in range(h):
+            for i in range(w):
+                distance=math.dist(Grid[j][i],dst_pts_mean)
+                if mindist==None or distance<mindist:
+                    mindist=distance
+                    closerpoint=Grid[j][i]
+                    col=i
+                    row=j
+        cv2.circle(img5, closerpoint, 5, (0, 0, 255),-1)
+        if math.dist(maxpoint,minpoint) > 500:
+            cv2.rectangle(img5,minpoint,maxpoint,(0,255,255),5)
+        else:
+            cv2.rectangle(img5,minpoint,maxpoint,(255,255,0),5)
+            cv2.rectangle(img7,minpoint,maxpoint,(0,0,0),-1)
+            boas_pecas.append((k, closerpoint,(col,row)))
+
+        cv2.imshow('img5', img5) 
+        
+        cv2.waitKey(200) 
+    for g in boas_pecas:
+        print(g) 
     cv2.waitKey(-1)
 
     cv2.destroyAllWindows
