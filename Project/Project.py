@@ -156,6 +156,7 @@ def main():
     img7 = cv2.imread('./Imagens/Puzzle_X_completo_v3.jpeg') 
     stop=False
     contflag=False
+    ratio=0.5
     while stop != True:
         for k in range(0, 19):
             if len(boas_pecas)==20:
@@ -182,8 +183,8 @@ def main():
             kp1, des1 = sift.detectAndCompute(img1,None)
             kp2, des2 = sift.detectAndCompute(img2,None)
 
-            FLANN_INDEX_KDTREE = 0
-            index_params = dict(algorithm = FLANN_INDEX_KDTREE, trees = 5)
+            FLANN_INDEX_KDTREE = 1
+            index_params = dict(algorithm = FLANN_INDEX_KDTREE, trees = 15)
             search_params = dict(checks = 50)
 
             flann = cv2.FlannBasedMatcher(index_params, search_params)
@@ -194,7 +195,7 @@ def main():
             good = []
             for m,n in matches:
             #     good.append(m)
-                if m.distance < 0.7*n.distance:
+                if m.distance < ratio*n.distance:
                     good.append(m)
 
 
@@ -232,10 +233,10 @@ def main():
             height,width,_=img5.shape
             #print(height)
             #print(width)
-            w, h = 4, 5
-            Grid = [[0 for x in range(w)] for y in range(h)] 
-            for j in range(h):
-                for i in range(w):
+            wg, hg = 4, 5
+            Grid = [[0 for x in range(wg)] for y in range(hg)] 
+            for j in range(hg):
+                for i in range(wg):
                     Grid[j][i] = (int(width/8 + i*width/4),int(height/10 + j*height/5))
             
             point_list=[(int(point[0][0]),int(point[0][1])) for point in src_pts]
@@ -252,8 +253,8 @@ def main():
             for point in good_points:
                 cv2.circle(img5, point, 5, (255, 0, 0),-1)
             mindist=None
-            for j in range(h):
-                for i in range(w):
+            for j in range(hg):
+                for i in range(wg):
                     distance=math.dist(Grid[j][i],dst_pts_mean)
                     if mindist==None or distance<mindist:
                         mindist=distance
@@ -267,6 +268,7 @@ def main():
             cv2.circle(img5, closerpoint, 5, (0, 0, 255),-1)
             if math.dist(maxpoint,minpoint) > 400:
                 cv2.rectangle(img5,minpoint,maxpoint,(0,255,255),5)
+                
             else:
                 cv2.rectangle(img5,minpoint,maxpoint,(255,255,0),5)
                 img2w, img2h = img2.shape
@@ -275,10 +277,10 @@ def main():
                 min_col = closerpoint[1] - math.floor(img2h/2)
                 max_col = closerpoint[1] + math.ceil(img2h/2)
                 img_compare = img1[min_row:max_row, min_col:max_col]
+                print(img_compare.shape)
+                print(img2.shape)
                 aux=cv2.subtract(img_compare,img2)
-                print(aux)
                 n_zeros = np.count_nonzero(aux==0)
-                print(n_zeros)
                 if n_zeros/len(aux) > 0.8:
                     cv2.rectangle(img7,block_minpoint,block_maxpoint,(0,0,0),-1)
                     boas_pecas.append((k, closerpoint,(col,row)))
@@ -286,11 +288,15 @@ def main():
             cv2.imshow('img5', img5) 
             
             cv2.waitKey(200) 
+        ratio+=0.05
+        if ratio>0.7:
+            break
+        print("-----------------")
         for g in boas_pecas:
             print(g) 
-        cv2.waitKey(-1)
+        # cv2.waitKey(-1)
     
 
-    cv2.destroyAllWindows
+    cv2.destroyAllWindows   
 if __name__ == "__main__":
     main()
