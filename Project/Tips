@@ -1,0 +1,13 @@
+Eliminar fotos Colored and BW
+Mudar:
+Linha 72
+Puzze Z: "./Imagens/Puzzle_Z_ordenado.jpeg"
+Linha 156
+Puzzle Z: './Imagens/Puzzle_Z_completo.jpeg'
+Linha 161
+Puzzle Z: k= range(0,15)
+Linha 162
+Puzzle Z: == 16
+Linha 236
+wh, hg = 4,4
+Linhas 174, 175
