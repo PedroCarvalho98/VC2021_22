@@ -9,10 +9,12 @@
 
 import argparse
 from turtle import width
+from typing import final
 import cv2
 from cv2 import imshow
 from cv2 import mean
 from cv2 import waitKey
+from cv2 import vconcat
 from matplotlib import pyplot as plt, widgets
 import numpy as np
 from numpy.lib.function_base import copy
@@ -143,6 +145,7 @@ def main():
         contours, hierarchy = cv2.findContours(~eroded_mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
         cv2.imshow("img_gray", img_gray)
         cv2.imshow("edges", edges)
+        cv2.waitKey(-1)
         contornos = []
 
         # Imagem com aplicação da máscara
@@ -187,8 +190,18 @@ def main():
             cv2.imwrite(os.path.join(pathBW , "BW"+str(i)+'_'+str(var)+".jpg"), cropped_bw)
             cv2.imwrite(os.path.join(pathColored , "Colored"+str(i)+'_'+ str(var)+".jpg"), cropped_color)
 
-
     cv2.waitKey(-1)
+
+    # --- Corner Harris --- #
+    # filename = './Colored/Colored'+'0'+'_'+str(var)+'.jpg'
+    # img = cv2.imread(filename)
+    # gray = cv2.cvtColor(img,cv2.COLOR_BGR2GRAY)
+    # dst = cv2.cornerHarris(gray,2,3,0.04)
+    # dst = cv2.dilate(dst,None)
+    # img[dst>0.1*dst.max()]=[0,0,255]
+    # cv2.imshow('dst',img)
+    # cv2.waitKey(-1)
+
     # # --- SIFT --- #
     # read images
     boas_pecas = []
@@ -263,6 +276,8 @@ def main():
                             matchesMask = matchesMask, # draw only inliers
                             flags = None)
 
+            # img3 = cv2.drawMatches(img1,kp1,img2,kp2,good,None,**draw_params)
+            # plt.imshow(img3), plt.show()
 
             # # --- Matching --- #
             height,width,_=img5.shape
@@ -353,6 +368,38 @@ def main():
 
     cv2.imshow("img7",img7) 
     cv2.waitKey(-1)
+    cv2.destroyAllWindows 
+    
+    # --- Resultado Final --- #
+    final_pecas = [[None for i in range(wg)] for j in range(hg)]
+    for g in boas_pecas:
+        final_pecas[g[2][1]][g[2][0]]=g[0]
+    print(final_pecas)
+    
+    blacksquare = cv2.imread('./Imagens/Black.png')
+    blacksquare=cv2.resize(blacksquare, (int(width/(wg*2)),int(height/(hg * 2))))
+    count_final = 0 
+    for h in final_pecas:
+        count = 0
+        for n in h:
+            if n == None:
+                fig = blacksquare
+            else:
+                fig = cv2.imread('./Colored/Colored'+str(n)+'_'+str(var)+'.jpg')
+                fig=cv2.resize(fig, (int(width/(wg*2)),int(height/(hg * 2))))
+            if count == 0:
+                im_v = fig
+            else:
+                im_v = np.concatenate((im_v, fig), axis=1)
+            count+=1
+        if count_final==0:
+            final_final=im_v
+        else:
+            final_final = np.concatenate((final_final, im_v), axis=0)
+        count_final+=1
+    
+    cv2.imshow('Final', final_final)
+    cv2.waitKey()    
     cv2.destroyAllWindows   
 if __name__ == "__main__":
     main()
