@@ -114,7 +114,6 @@ def main():
         if var != 'X':
             image = cv2.resize(image, (800, 800))   # Temos demasiada resolução da câmara
         image_aux = image.copy()
-        # image_aux = cv2.resize(image_aux, (800, 800))
         masker=maskmaker(image)
         cv2.namedWindow(window_name)
         cv2.imshow(window_name, image)
@@ -134,8 +133,6 @@ def main():
 
         eroded_mask=cv2.morphologyEx(mask,cv2.MORPH_OPEN, kernel)
         eroded_mask = cv2.morphologyEx(eroded_mask, cv2.MORPH_DILATE, kernel)
-        # kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(11,11))
-        # eroded_mask = cv2.morphologyEx(eroded_mask, cv2.MORPH_OPEN, kernel)
         
         ## --- Segmentação e alinhamento das peças --- ##
         # Convert to graycsale
@@ -246,7 +243,6 @@ def main():
             # store all the good matches as per Lowe's ratio test.
             good = []
             for m,n in matches:
-            #     good.append(m)
                 if m.distance < ratio*n.distance:
                     good.append(m)
 
@@ -259,13 +255,6 @@ def main():
                 M, mask = cv2.findHomography(src_pts, dst_pts, cv2.RANSAC,5.0)
                 matchesMask = mask.ravel().tolist()
 
-                #d,h= img1.shape[::-1]
-                #w=1
-                #pts = np.float32([ [0,0],[0,h-1],[w-1,h-1],[w-1,0] ]).reshape(-1,1,2)
-                #dst = cv2.perspectiveTransform(pts,M)
-
-                #img2 = cv2.polylines(img2,[np.int32(dst)],True,255,3, cv2.LINE_AA)
-
             else:
                 print ("Not enough matches are found" )
                 matchesMask = None
@@ -275,9 +264,6 @@ def main():
                             singlePointColor = None,
                             matchesMask = matchesMask, # draw only inliers
                             flags = None)
-
-            # img3 = cv2.drawMatches(img1,kp1,img2,kp2,good,None,**draw_params)
-            # plt.imshow(img3), plt.show()
 
             # # --- Matching --- #
             height,width,_=img5.shape
@@ -337,7 +323,6 @@ def main():
                         TrueGrid=gridpoint
                 if TrueGrid != None:
                     print("Passed by Grid")
-                    print(TrueGrid[1])
                     mingrid=(TrueGrid[0][0]-int(width/(wg*2) ),TrueGrid[0][1]-int(height/(hg * 2) ))
                     maxgrid=(TrueGrid[0][0]+int(width/(wg*2) ),TrueGrid[0][1]+int(height/(hg * 2) ))
                     cv2.rectangle(img7,mingrid,maxgrid,(0,0,0),-1)
